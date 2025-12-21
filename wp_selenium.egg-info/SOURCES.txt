@@ -1,0 +1,14 @@
+README.md
+pyproject.toml
+./framework/__init__.py
+./framework/config.py
+./framework/runner.py
+./framework/test_discovery.py
+./pages/__init__.py
+./tests/__init__.py
+./tests/test_smoke_example.py
+tests/test_smoke_example.py
+wp_selenium.egg-info/PKG-INFO
+wp_selenium.egg-info/SOURCES.txt
+wp_selenium.egg-info/dependency_links.txt
+wp_selenium.egg-info/top_level.txt

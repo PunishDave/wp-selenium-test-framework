@@ -1,0 +1,21 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+
+# Virtualenv
+.venv/
+venv/
+
+# Pytest
+.pytest_cache/
+
+# OS/editor cruft
+.DS_Store
+.idea/
+.vscode/
+*.swp
+
+# secrets
+.env
