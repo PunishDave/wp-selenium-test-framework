@@ -126,7 +126,7 @@ def test_gamewithdave_under_threshold_does_not_create_event():
     assert target not in dates
 
 
-def test_gamewithdave_event_created_and_detection_email_for_three_yes():
+def test_gamewithdave_event_created_and_detection_email_for_three_yes(record_property):
     target = future_iso(100)
     _clear_debug_log()
 
@@ -136,10 +136,11 @@ def test_gamewithdave_event_created_and_detection_email_for_three_yes():
     assert any(n["date"] == target and n.get("status") == "detected" for n in nights)
 
     entries = _debug_entries()
+    record_property("gwd_debug_emails", entries)
     assert any(e.get("type") == "detection" and e.get("date") == target for e in entries)
 
 
-def test_gamewithdave_event_created_with_tentatives_counts_and_detection_email():
+def test_gamewithdave_event_created_with_tentatives_counts_and_detection_email(record_property):
     target = future_iso(101)
     _clear_debug_log()
 
@@ -152,10 +153,11 @@ def test_gamewithdave_event_created_with_tentatives_counts_and_detection_email()
     assert any(n["date"] == target for n in nights)
 
     entries = _debug_entries()
+    record_property("gwd_debug_emails", entries)
     assert any(e.get("type") == "detection" and e.get("date") == target for e in entries)
 
 
-def test_gamewithdave_remove_detected_night_no_email():
+def test_gamewithdave_remove_detected_night_no_email(record_property):
     target = future_iso(102)
     _clear_debug_log()
 
@@ -170,13 +172,14 @@ def test_gamewithdave_remove_detected_night_no_email():
     assert resp.get("success") is True
 
     entries = _debug_entries()
+    record_property("gwd_debug_emails", entries)
     assert not entries  # removal should not send mail
 
     nights = _nights_list()
     assert any(n["date"] == target and n.get("status") == "removed" for n in nights)
 
 
-def test_gamewithdave_lock_in_sends_debug_email_with_ics():
+def test_gamewithdave_lock_in_sends_debug_email_with_ics(record_property):
     target = future_iso(103)
     _clear_debug_log()
 
@@ -191,6 +194,7 @@ def test_gamewithdave_lock_in_sends_debug_email_with_ics():
     assert resp.get("success") is True
 
     entries = _debug_entries()
+    record_property("gwd_debug_emails", entries)
     assert any(
         e.get("type") == "lock"
         and e.get("date") == target

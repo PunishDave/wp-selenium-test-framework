@@ -10,6 +10,7 @@ venv/
 
 # Pytest
 .pytest_cache/
+reports/
 
 # OS/editor cruft
 .DS_Store

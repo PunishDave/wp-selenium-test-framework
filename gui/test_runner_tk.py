@@ -88,6 +88,7 @@ class TestRunnerGUI(tk.Tk):
         ttk.Button(header, text="Refresh", command=self.refresh_tests).grid(row=0, column=1, padx=(8, 0))
         ttk.Button(header, text="Select All", command=self.select_all).grid(row=0, column=2, padx=(8, 0))
         ttk.Button(header, text="Select None", command=self.select_none).grid(row=0, column=3, padx=(8, 0))
+        ttk.Button(header, text="Open Reports", command=self.open_reports).grid(row=0, column=4, padx=(8, 0))
 
         list_frame = ttk.Frame(mid)
         list_frame.grid(row=1, column=0, sticky="nsew", pady=(8, 0))
@@ -149,6 +150,20 @@ class TestRunnerGUI(tk.Tk):
 
     def select_none(self):
         self.listbox.selection_clear(0, "end")
+
+    def open_reports(self):
+        reports_dir = PROJECT_ROOT / "reports"
+        reports_dir.mkdir(exist_ok=True)
+        path = str(reports_dir)
+        try:
+            if sys.platform.startswith("darwin"):
+                subprocess.Popen(["open", path])
+            elif os.name == "nt":
+                os.startfile(path)  # type: ignore[attr-defined]
+            else:
+                subprocess.Popen(["xdg-open", path])
+        except Exception as exc:
+            messagebox.showerror("Unable to open reports", f"Could not open {path}:\n{exc}")
 
     def _build_env(self) -> dict[str, str]:
         env = os.environ.copy()
