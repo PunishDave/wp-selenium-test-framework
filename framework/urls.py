@@ -22,6 +22,10 @@ MEAL_PLANNER_INDEX  = f"{BASE}/index.php/meal-planner/"
 TODO_PRETTY = f"{BASE}/to-do/"
 TODO_INDEX  = f"{BASE}/index.php/to-do/"
 
+# Simple Workout Log (front-end)
+WORKOUT_LOG_PRETTY = f"{BASE}/workout-log/"
+WORKOUT_LOG_INDEX  = f"{BASE}/index.php/workout-log/"
+
 # WP Admin slugs (stable if you know them)
 MP_ADMIN_RECIPES_SLUG = "admin.php?page=mp_recipes"
 MP_ADMIN_ADD_SLUG     = "admin.php?page=mp_add_recipe"
