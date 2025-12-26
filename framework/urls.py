@@ -18,6 +18,10 @@ ADMIN_AJAX = f"{WP_ADMIN}admin-ajax.php"
 MEAL_PLANNER_PRETTY = f"{BASE}/meal-planner/"
 MEAL_PLANNER_INDEX  = f"{BASE}/index.php/meal-planner/"
 
+# To-Do (front-end)
+TODO_PRETTY = f"{BASE}/to-do/"
+TODO_INDEX  = f"{BASE}/index.php/to-do/"
+
 # WP Admin slugs (stable if you know them)
 MP_ADMIN_RECIPES_SLUG = "admin.php?page=mp_recipes"
 MP_ADMIN_ADD_SLUG     = "admin.php?page=mp_add_recipe"

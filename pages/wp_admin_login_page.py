@@ -13,16 +13,23 @@ class WpAdminLoginPage:
     SUBMIT = (By.ID, "wp-submit")
 
     WELCOME_PANEL = (By.CSS_SELECTOR, "div.welcome-panel-content h2")
+    ADMIN_BAR = (By.ID, "wpadminbar")
 
     def __init__(self, driver):
         self.driver = driver
 
     def load(self):
         self.driver.get(self.URL)
-        WebDriverWait(self.driver, 20).until(EC.presence_of_element_located(self.USER))
+        WebDriverWait(self.driver, 20).until(
+            lambda d: d.find_elements(*self.USER) or d.find_elements(*self.WELCOME_PANEL) or d.find_elements(*self.ADMIN_BAR)
+        )
         return self
 
     def login(self, username: str, password: str):
+        # If already logged in, nothing to do.
+        if self.driver.find_elements(*self.WELCOME_PANEL) or self.driver.find_elements(*self.ADMIN_BAR):
+            return self
+
         self.driver.find_element(*self.USER).clear()
         self.driver.find_element(*self.USER).send_keys(username)
 
@@ -36,4 +43,3 @@ class WpAdminLoginPage:
             EC.text_to_be_present_in_element(self.WELCOME_PANEL, "Welcome to WordPress!")
         )
         return self
-

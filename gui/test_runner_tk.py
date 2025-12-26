@@ -42,6 +42,7 @@ class TestRunnerGUI(tk.Tk):
         self.wp_user_var = tk.StringVar(value=os.environ.get("WP_ADMIN_USER", ""))
         self.wp_pass_var = tk.StringVar(value=os.environ.get("WP_ADMIN_PASS", ""))
         self.mp_pass_var = tk.StringVar(value=os.environ.get("MP_PASSWORD", ""))
+        self.todo_key_var = tk.StringVar(value=os.environ.get("PD_TODO_KEY", ""))
 
         self._build_ui()
         self.refresh_tests()
@@ -73,6 +74,14 @@ class TestRunnerGUI(tk.Tk):
             text="Used only if the Meal Planner 'Save Week' prompt appears.",
             foreground="#666666",
         ).grid(row=2, column=2, columnspan=2, sticky="w", pady=(8, 2))
+
+        ttk.Label(settings, text="To-Do Access Key (optional)").grid(row=3, column=0, sticky="w", pady=(8, 2))
+        ttk.Entry(settings, textvariable=self.todo_key_var, show="•").grid(row=3, column=1, sticky="ew", padx=(8, 16), pady=(8, 2))
+        ttk.Label(
+            settings,
+            text="If set, passed as PD_TODO_KEY env so the to-do plugin unlocks.",
+            foreground="#666666",
+        ).grid(row=3, column=2, columnspan=2, sticky="w", pady=(8, 2))
 
         # Test list + controls
         mid = ttk.Frame(outer)
@@ -182,6 +191,12 @@ class TestRunnerGUI(tk.Tk):
             env["MP_PASSWORD"] = mp
         else:
             env.pop("MP_PASSWORD", None)
+
+        todo_key = self.todo_key_var.get().strip()
+        if todo_key:
+            env["PD_TODO_KEY"] = todo_key
+        else:
+            env.pop("PD_TODO_KEY", None)
 
         return env
 
