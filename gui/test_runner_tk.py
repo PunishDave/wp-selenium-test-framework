@@ -43,6 +43,7 @@ class TestRunnerGUI(tk.Tk):
         self.wp_pass_var = tk.StringVar(value=os.environ.get("WP_ADMIN_PASS", ""))
         self.mp_pass_var = tk.StringVar(value=os.environ.get("MP_PASSWORD", ""))
         self.todo_key_var = tk.StringVar(value=os.environ.get("PD_TODO_KEY", ""))
+        self.swl_key_var = tk.StringVar(value=os.environ.get("PDSWL_KEY", ""))
 
         self._build_ui()
         self.refresh_tests()
@@ -83,14 +84,24 @@ class TestRunnerGUI(tk.Tk):
             foreground="#666666",
         ).grid(row=3, column=2, columnspan=2, sticky="w", pady=(8, 2))
 
-        # Test list + controls
-        mid = ttk.Frame(outer)
-        mid.pack(fill="both", expand=True, pady=(12, 0))
-        mid.columnconfigure(0, weight=1)
-        mid.rowconfigure(1, weight=1)
+        ttk.Label(settings, text="Workout Log Access Key (optional)").grid(row=4, column=0, sticky="w", pady=(8, 2))
+        ttk.Entry(settings, textvariable=self.swl_key_var, show="•").grid(row=4, column=1, sticky="ew", padx=(8, 16), pady=(8, 2))
+        ttk.Label(
+            settings,
+            text="If set, passed as PDSWL_KEY env so the Simple Workout Log unlocks.",
+            foreground="#666666",
+        ).grid(row=4, column=2, columnspan=2, sticky="w", pady=(8, 2))
 
-        header = ttk.Frame(mid)
-        header.grid(row=0, column=0, sticky="ew")
+        # Main content: split horizontally (tests on the left, output on the right)
+        main = ttk.Frame(outer)
+        main.pack(fill="both", expand=True, pady=(12, 0))
+        main.columnconfigure(0, weight=1)
+        main.columnconfigure(1, weight=2)
+        main.rowconfigure(1, weight=1)
+
+        # Test list + controls
+        header = ttk.Frame(main)
+        header.grid(row=0, column=0, columnspan=2, sticky="ew")
         header.columnconfigure(0, weight=1)
 
         ttk.Label(header, text="Discovered test files").grid(row=0, column=0, sticky="w")
@@ -99,8 +110,8 @@ class TestRunnerGUI(tk.Tk):
         ttk.Button(header, text="Select None", command=self.select_none).grid(row=0, column=3, padx=(8, 0))
         ttk.Button(header, text="Open Reports", command=self.open_reports).grid(row=0, column=4, padx=(8, 0))
 
-        list_frame = ttk.Frame(mid)
-        list_frame.grid(row=1, column=0, sticky="nsew", pady=(8, 0))
+        list_frame = ttk.LabelFrame(main, text="Tests", padding=8)
+        list_frame.grid(row=1, column=0, sticky="nsew", pady=(8, 0), padx=(0, 6))
         list_frame.columnconfigure(0, weight=1)
         list_frame.rowconfigure(0, weight=1)
 
@@ -111,8 +122,8 @@ class TestRunnerGUI(tk.Tk):
         sb.grid(row=0, column=1, sticky="ns")
         self.listbox.configure(yscrollcommand=sb.set)
 
-        btns = ttk.Frame(mid)
-        btns.grid(row=2, column=0, sticky="ew", pady=(10, 0))
+        btns = ttk.Frame(list_frame)
+        btns.grid(row=1, column=0, sticky="ew", pady=(8, 0))
         btns.columnconfigure(0, weight=1)
 
         self.run_selected_btn = ttk.Button(btns, text="Run Selected", command=self.run_selected)
@@ -125,8 +136,8 @@ class TestRunnerGUI(tk.Tk):
         self.stop_btn.grid(row=0, column=2, sticky="w", padx=(8, 0))
 
         # Output
-        out_frame = ttk.LabelFrame(outer, text="Output", padding=10)
-        out_frame.pack(fill="both", expand=True, pady=(12, 0))
+        out_frame = ttk.LabelFrame(main, text="Output", padding=10)
+        out_frame.grid(row=1, column=1, sticky="nsew", pady=(8, 0))
         out_frame.columnconfigure(0, weight=1)
         out_frame.rowconfigure(0, weight=1)
 
@@ -197,6 +208,12 @@ class TestRunnerGUI(tk.Tk):
             env["PD_TODO_KEY"] = todo_key
         else:
             env.pop("PD_TODO_KEY", None)
+
+        swl_key = self.swl_key_var.get().strip()
+        if swl_key:
+            env["PDSWL_KEY"] = swl_key
+        else:
+            env.pop("PDSWL_KEY", None)
 
         return env
 

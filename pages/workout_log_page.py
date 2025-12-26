@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import date
+import os
 from typing import Optional
 
 from selenium.common.exceptions import StaleElementReferenceException, TimeoutException
@@ -15,6 +16,9 @@ from framework.urls import WORKOUT_LOG_INDEX, WORKOUT_LOG_PRETTY
 class WorkoutLogPage:
     ROOT = (By.CSS_SELECTOR, ".pdswl-root")
     APP = (By.CSS_SELECTOR, ".pdswl-app")
+    KEY_FORM = (By.CSS_SELECTOR, ".pdswl-key-form")
+    KEY_INPUT = (By.CSS_SELECTOR, ".pdswl-key-form input")
+    KEY_BUTTON = (By.CSS_SELECTOR, ".pdswl-key-form button")
     DAY_BUTTONS = (By.CSS_SELECTOR, ".pdswl-day-list .pdswl-day")
     ACTIVE_DAY = (By.CSS_SELECTOR, ".pdswl-day.is-active")
     CONTENT = (By.CSS_SELECTOR, ".pdswl-content")
@@ -29,15 +33,24 @@ class WorkoutLogPage:
 
     def __init__(self, driver):
         self.driver = driver
+        self._key_seeded = False
+        self._override_key: str | None = None
 
     # -------- Navigation --------
 
-    def load(self):
+    def load(self, access_key: str | None = None):
+        if access_key:
+            self._override_key = access_key
+        seed_key = self._get_access_key()
+        self._seed_access_key(seed_key)
+
         self.driver.get(WORKOUT_LOG_PRETTY)
         if not self._page_ready(timeout=12):
             self.driver.get(WORKOUT_LOG_INDEX)
             if not self._page_ready(timeout=18):
                 raise AssertionError("Workout Log page did not load on /workout-log/ or /index.php/workout-log/")
+
+        self._ensure_key_if_prompted(seed_key)
         return self
 
     def _page_ready(self, timeout: int = 12) -> bool:
@@ -48,6 +61,55 @@ class WorkoutLogPage:
             return True
         except TimeoutException:
             return False
+
+    def _get_access_key(self) -> str:
+        if self._override_key:
+            return self._override_key
+        env_key = (os.getenv("PDSWL_KEY") or "").strip()
+        if env_key:
+            return env_key
+        return ""
+
+    def _seed_access_key(self, key: str):
+        """
+        Store the access key into localStorage before scripts fire so the UI and API calls can use it.
+        """
+        if not key or self._key_seeded:
+            return
+        try:
+            # do it on about:blank to avoid script timing
+            self.driver.get("about:blank")
+            self.driver.execute_script("localStorage.setItem('pdswlKey', arguments[0]);", key)
+            self._key_seeded = True
+        except Exception:
+            self._key_seeded = False
+
+    def _ensure_key_if_prompted(self, key: str):
+        def visible_form() -> WebElement | None:
+            try:
+                for f in self.driver.find_elements(*self.KEY_FORM):
+                    if f.is_displayed():
+                        return f
+            except StaleElementReferenceException:
+                return None
+            return None
+
+        form = visible_form()
+        if not form:
+            return
+
+        assert key, "Access key prompt shown. Set PDSWL_KEY env var so tests can proceed."
+        inp = form.find_element(*self.KEY_INPUT)
+        btn = form.find_element(*self.KEY_BUTTON)
+        inp.clear()
+        inp.send_keys(key)
+        btn.click()
+
+        def prompt_gone(_):
+            frm = visible_form()
+            return frm is None
+
+        WebDriverWait(self.driver, 10).until(prompt_gone)
 
     # -------- Day and card helpers --------
 
