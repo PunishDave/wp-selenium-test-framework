@@ -27,7 +27,6 @@ class WorkoutLogPage:
     CARD_META = (By.CSS_SELECTOR, ".pdswl-card .pdswl-meta")
     UPDATE_BUTTON = (By.CSS_SELECTOR, ".pdswl-card .pdswl-update")
     WEIGHT_INPUT = (By.CSS_SELECTOR, "input[name='weight']")
-    REPS_INPUT = (By.CSS_SELECTOR, "input[name='reps']")
     ERROR = (By.CSS_SELECTOR, ".pdswl-error")
     LOADING = (By.CSS_SELECTOR, ".pdswl-loading")
 
@@ -166,7 +165,7 @@ class WorkoutLogPage:
                 cards[title.lower()] = card
         return cards
 
-    def update_first_card(self, weight: str, reps: Optional[int] = None, timeout: int = 25) -> dict:
+    def update_first_card(self, weight: str, timeout: int = 25) -> dict:
         cards = WebDriverWait(self.driver, 20).until(EC.presence_of_all_elements_located(self.CARD))
         card = cards[0]
         title_el = card.find_elements(*self.CARD_TITLE)
@@ -176,11 +175,6 @@ class WorkoutLogPage:
         if weight_input:
             weight_input[0].clear()
             weight_input[0].send_keys(weight)
-
-        reps_input = card.find_elements(*self.REPS_INPUT)
-        if reps_input and reps is not None:
-            reps_input[0].clear()
-            reps_input[0].send_keys(str(reps))
 
         card.find_element(*self.UPDATE_BUTTON).click()
         self.wait_for_loading_to_clear(timeout=timeout)
@@ -194,27 +188,22 @@ class WorkoutLogPage:
                 if not card_now:
                     return False
                 weight_now = ""
-                reps_now = ""
                 w_inputs = card_now.find_elements(*self.WEIGHT_INPUT)
                 if w_inputs:
                     weight_now = (w_inputs[0].get_attribute("value") or "").strip()
-                r_inputs = card_now.find_elements(*self.REPS_INPUT)
-                if r_inputs:
-                    reps_now = (r_inputs[0].get_attribute("value") or "").strip()
                 meta_txt = ""
                 meta = card_now.find_elements(*self.CARD_META)
                 if meta:
                     meta_txt = (meta[0].text or "").strip().lower()
 
                 weight_ok = not weight or weight_now.lower() == weight.lower()
-                reps_ok = reps is None or reps_now == str(reps)
                 date_ok = today_str in meta_txt or not meta_txt
-                return weight_ok and reps_ok and date_ok
+                return weight_ok and date_ok
             except StaleElementReferenceException:
                 return False
 
         WebDriverWait(self.driver, timeout).until(updated)
-        return {"workout": workout_name, "weight": weight, "reps": str(reps) if reps is not None else ""}
+        return {"workout": workout_name, "weight": weight, "reps": ""}
 
     def first_card_snapshot(self) -> dict:
         cards = self.driver.find_elements(*self.CARD)
@@ -223,12 +212,11 @@ class WorkoutLogPage:
         card = cards[0]
         title_el = card.find_elements(*self.CARD_TITLE)
         weight_el = card.find_elements(*self.WEIGHT_INPUT)
-        reps_el = card.find_elements(*self.REPS_INPUT)
         meta_el = card.find_elements(*self.CARD_META)
         return {
             "title": (title_el[0].text or "").strip() if title_el else "",
             "weight": (weight_el[0].get_attribute("value") or "").strip() if weight_el else "",
-            "reps": (reps_el[0].get_attribute("value") or "").strip() if reps_el else "",
+            "reps": "",
             "meta": (meta_el[0].text or "").strip() if meta_el else "",
         }
 

@@ -110,6 +110,28 @@ def test_simple_workout_log_days_endpoint():
         skip_404_msg="Simple Workout Log days endpoint not reachable (404). Is the plugin active?",
     )
     assert isinstance(payload, list), "Days endpoint did not return a list."
-    if payload:
-        first = payload[0]
-        assert "day_key" in first, "Expected day_key in SWL day payload."
+    if not payload:
+        return
+
+    first = payload[0]
+    assert "day_key" in first, "Expected day_key in SWL day payload."
+    day_key = first["day_key"]
+
+    detail = _rest_json(
+        f"{urls.BASE}/wp-json/pdswl/v1/days/{day_key}",
+        f"{urls.BASE}/index.php?rest_route=/pdswl/v1/days/{day_key}",
+        key,
+        "X-PDSWL-Key",
+        skip_key_msg="Simple Workout Log access key required; set PDSWL_KEY to exercise this endpoint.",
+        skip_404_msg="Simple Workout Log day endpoint not reachable (404). Is the plugin active?",
+    )
+    assert isinstance(detail, dict), "Day detail endpoint did not return an object."
+    workouts = detail.get("workouts", [])
+    assert isinstance(workouts, list), "Day detail missing workouts list."
+    if workouts:
+        for w in workouts:
+            assert "name" in w, "Workout missing name in day detail."
+            assert "reps" in w, "Workout missing reps in day detail."
+            assert "last_weight" in w, "Workout missing last_weight in day detail."
+            assert "last_reps" in w, "Workout missing last_reps in day detail."
+            assert "last_performed_on" in w, "Workout missing last_performed_on in day detail."
