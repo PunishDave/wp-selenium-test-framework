@@ -116,11 +116,12 @@ def test_todo_add_and_complete_task(driver):
     assert title in page.completed_titles()
 
 
-def test_todo_recurring_task_rolls_forward(driver):
+@pytest.mark.parametrize("recurrence", ["daily", "weekly", "quarterly"])
+def test_todo_recurring_task_rolls_forward(driver, recurrence):
     page = TodoPage(driver).load()
-    title = _unique_title("Selenium Recurring")
+    title = _unique_title(f"Selenium Recurring {recurrence}")
 
-    page.add_task(title, _today_str(), recurrence="weekly", description="Recurring item")
+    page.add_task(title, _today_str(), recurrence=recurrence, description="Recurring item")
     page.wait_for_item_in_active_list(title)
     initial_due = page.due_text_for_active_item(title)
 
