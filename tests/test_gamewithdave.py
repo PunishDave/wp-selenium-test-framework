@@ -7,6 +7,7 @@ from framework.gwd_api import (
     clear_debug_emails,
     fetch_game_nights,
     submit_availability,
+    trigger_cron,
     update_game_night,
 )
 
@@ -204,6 +205,36 @@ def test_gamewithdave_lock_in_sends_debug_email_with_ics(record_property):
 
     nights = _nights_list()
     assert any(n["date"] == target and n.get("status") == "locked" for n in nights)
+
+
+def test_gamewithdave_reminder_email_logged_when_missing_availability(record_property):
+    _clear_debug_log()
+
+    resp = trigger_cron()
+    assert resp.get("success") is True, f"trigger_cron failed: {resp}"
+
+    entries = _debug_entries()
+    record_property("gwd_debug_emails", entries)
+    reminders = [e for e in entries if e.get("type") == "availability-reminder"]
+    assert reminders, "Expected at least one availability reminder email entry"
+
+
+def test_gamewithdave_reminder_skipped_when_user_has_availability(record_property):
+    _clear_debug_log()
+    target = future_iso(1)
+
+    submit_availability(password=GWD_PASSWORDS["bene"], start_date=target, end_date=target, status="yes")
+
+    resp = trigger_cron()
+    assert resp.get("success") is True, f"trigger_cron failed: {resp}"
+
+    entries = _debug_entries()
+    record_property("gwd_debug_emails", entries)
+    reminders_for_bene = [
+        e for e in entries
+        if e.get("type") == "availability-reminder" and e.get("user_role") == "bene"
+    ]
+    assert not reminders_for_bene, "Did not expect a reminder for users who already set availability"
 
 
 def test_gamewithdave_admin_panel_rejects_invalid_admin_password():
