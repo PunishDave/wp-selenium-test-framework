@@ -3,6 +3,7 @@ import os
 import urllib.error
 import urllib.parse
 import urllib.request
+from datetime import date, timedelta
 
 import pytest
 
@@ -86,6 +87,42 @@ def _rest_json(permalink: str, rest_route: str, key: str, header_name: str, *, s
             pytest.skip(skip_404_msg)
 
 
+def _rest_json_body(method: str, permalink: str, rest_route: str, body: dict, headers: dict[str, str], *, skip_key_msg: str, skip_404_msg: str):
+    payload = json.dumps(body).encode()
+
+    def _request(url: str):
+        req = urllib.request.Request(url, data=payload, method=method)
+        for k, v in headers.items():
+            req.add_header(k, v)
+        with urllib.request.urlopen(req, timeout=15) as resp:
+            if resp.status not in (200, 201):
+                raise AssertionError(f"{method} {url} returned {resp.status}")
+            return json.loads(resp.read().decode() or "{}")
+
+    try:
+        return _request(permalink)
+    except urllib.error.HTTPError as exc:  # type: ignore[attr-defined]
+        if exc.code == 401 and "X-MP-Key" in headers and not headers.get("X-MP-Key"):
+            pytest.skip(skip_key_msg)
+        if exc.code != 404:
+            raise
+        try:
+            return _request(rest_route)
+        except urllib.error.HTTPError as exc2:  # type: ignore[attr-defined]
+            if exc2.code == 401 and "X-MP-Key" in headers and not headers.get("X-MP-Key"):
+                pytest.skip(skip_key_msg)
+            pytest.skip(skip_404_msg)
+
+
+def _next_saturday() -> date:
+    today = date.today()
+    # weekday: Monday=0 ... Sunday=6; Saturday=5
+    days_ahead = (5 - today.weekday()) % 7
+    if days_ahead == 0:
+        days_ahead = 7
+    return today + timedelta(days=days_ahead)
+
+
 def test_todo_rest_items_endpoint():
     key = (os.getenv("PD_TODO_KEY") or "").strip()
     payload = _rest_json(
@@ -135,3 +172,44 @@ def test_simple_workout_log_days_endpoint():
             assert "last_weight" in w, "Workout missing last_weight in day detail."
             assert "last_reps" in w, "Workout missing last_reps in day detail."
             assert "last_performed_on" in w, "Workout missing last_performed_on in day detail."
+
+
+def test_meal_planner_shopping_list_get_endpoint():
+    week_start = _next_saturday().isoformat()
+    payload = _rest_json(
+        f"{urls.BASE}/wp-json/meal-planner/v1/shopping-list?week_start={week_start}",
+        f"{urls.BASE}/index.php?rest_route=/meal-planner/v1/shopping-list&week_start={week_start}",
+        "",
+        "X-MP-Key",
+        skip_key_msg="Meal Planner access key required; set MP_KEY to exercise POST endpoints.",
+        skip_404_msg="Meal Planner shopping list endpoint not reachable (404). Is the plugin active?",
+    )
+    assert isinstance(payload, dict), "Shopping list GET did not return an object."
+    assert payload.get("week_start") == week_start, "Shopping list GET returned unexpected week_start."
+    assert isinstance(payload.get("shopping_list", []), list), "shopping_list should be a list."
+
+
+def test_meal_planner_shopping_list_post_endpoint():
+    key = (os.getenv("MP_KEY") or os.getenv("MP_ACCESS_KEY") or "").strip()
+    if not key:
+        pytest.skip("Set MP_KEY or MP_ACCESS_KEY to exercise Meal Planner shopping list POST.")
+
+    week_start = _next_saturday().isoformat()
+    token = f"SeleniumItem-{int(os.getenv('PYTEST_CURRENT_TEST', '0').split(' ')[0].__hash__())}"
+    items = [token, "Eggs (Test Meal)"]
+
+    payload = _rest_json_body(
+        "POST",
+        f"{urls.BASE}/wp-json/meal-planner/v1/shopping-list",
+        f"{urls.BASE}/index.php?rest_route=/meal-planner/v1/shopping-list",
+        {"week_start": week_start, "items": items},
+        {"Content-Type": "application/json", "X-MP-Key": key},
+        skip_key_msg="Meal Planner access key required; set MP_KEY or MP_ACCESS_KEY to exercise this endpoint.",
+        skip_404_msg="Meal Planner shopping list endpoint not reachable (404). Is the plugin active?",
+    )
+
+    assert isinstance(payload, dict), "Shopping list POST did not return an object."
+    assert payload.get("week_start") == week_start, "Shopping list POST returned unexpected week_start."
+    saved_items = payload.get("shopping_list", [])
+    assert isinstance(saved_items, list), "shopping_list should be a list."
+    assert any(token in s for s in saved_items), "Shopping list POST response missing the test token item."

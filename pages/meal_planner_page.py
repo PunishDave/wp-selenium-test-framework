@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import os
-import re
 import time
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait, Select
@@ -23,6 +22,9 @@ class MealPlannerPage:
     # actions
     GENERATE_WEEK = (By.ID, "mp-generate-week")
     SAVE_WEEK     = (By.ID, "mp-save-week")
+    ACCESS_INPUT  = (By.ID, "mp-access-key")
+    ACCESS_BTN    = (By.ID, "mp-access-apply")
+    ACCESS_STATUS = (By.CSS_SELECTOR, ".mp-access-status")
 
     # generic cell content
     CELL_CONTENTS = (By.CSS_SELECTOR, ".cell-content")
@@ -118,6 +120,45 @@ class MealPlannerPage:
         cells = self.driver.find_elements(*self.CELL_CONTENTS)
         return cells[0] if cells else None
 
+    def set_access_key_if_available(self):
+        key = (
+            (os.getenv("MP_KEY") or "").strip()
+            or (os.getenv("MP_ACCESS_KEY") or "").strip()
+            or (os.getenv("MP_PASSWORD") or "").strip()
+        )
+        if not key:
+            return None
+        try:
+            self.set_access_key(key)
+            return key
+        except Exception:
+            return None
+
+    def set_access_key(self, key: str):
+        key = (key or "").strip()
+        if not key:
+            return
+        inp = WebDriverWait(self.driver, 10).until(EC.presence_of_element_located(self.ACCESS_INPUT))
+        inp.clear()
+        inp.send_keys(key)
+        try:
+            WebDriverWait(self.driver, 3).until(EC.element_to_be_clickable(self.ACCESS_BTN)).click()
+        except Exception:
+            pass
+        # small wait for unlock
+        try:
+            WebDriverWait(self.driver, 5).until(
+                lambda d: not self._is_button_disabled(d.find_element(*self.SAVE_WEEK))
+                or "Unlocked" in (d.find_element(*self.ACCESS_STATUS).text or "")
+            )
+        except Exception:
+            pass
+        return self
+
+    @staticmethod
+    def _is_button_disabled(btn) -> bool:
+        return (btn.get_attribute("disabled") is not None) or ("disabled" in (btn.get_attribute("class") or "").lower())
+
     def click_replace_day0_and_wait_change(self, timeout: int = 25, retries: int = 3):
         """
         Replace is random. It might pick the same meal again.
@@ -173,40 +214,16 @@ class MealPlannerPage:
             return "unavailable"
         btn = btns[0]
 
-        disabled = (btn.get_attribute("disabled") is not None) or ("disabled" in (btn.get_attribute("class") or "").lower())
-        if disabled:
+        if self._is_button_disabled(btn):
             return "unavailable"
 
         btn.click()
 
+        # wait for disable or state change after save
         try:
-            alert = WebDriverWait(self.driver, 5).until(EC.alert_is_present())
+            WebDriverWait(self.driver, 10).until(
+                lambda d: self._is_button_disabled(btn) or "has-plan" in (d.find_element(By.CSS_SELECTOR, ".meal-planner-wrapper").get_attribute("class") or "")
+            )
+            return "saved"
         except TimeoutException:
-            return "clicked_no_prompt"
-
-        mp_pw = (os.getenv("MP_PASSWORD") or "").strip()
-        if mp_pw:
-            try:
-                alert.send_keys(mp_pw)
-            except Exception:
-                pass
-            alert.accept()
-        else:
-            try:
-                alert.dismiss()
-            except Exception:
-                alert.accept()
-            return "password_missing_dismissed"
-
-        # shopping list alert afterwards (if your plugin does that)
-        try:
-            shop_alert = WebDriverWait(self.driver, 10).until(EC.alert_is_present())
-            txt = (shop_alert.text or "").strip()
-            shop_alert.accept()
-        except TimeoutException:
-            return "saved_no_shopping_alert"
-
-        lines = [ln.strip() for ln in txt.splitlines() if ln.strip()]
-        has_words = bool(re.search(r"[A-Za-z]{3,}", txt))
-        assert has_words and len(lines) >= 3, f"Shopping list alert didn’t look like ingredients. Text was:\n{txt}"
-        return "saved_ok"
+            return "clicked_no_state_change"

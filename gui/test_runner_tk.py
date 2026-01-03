@@ -42,6 +42,7 @@ class TestRunnerGUI(tk.Tk):
         self.wp_user_var = tk.StringVar(value=os.environ.get("WP_ADMIN_USER", ""))
         self.wp_pass_var = tk.StringVar(value=os.environ.get("WP_ADMIN_PASS", ""))
         self.mp_pass_var = tk.StringVar(value=os.environ.get("MP_PASSWORD", ""))
+        self.mp_key_var = tk.StringVar(value=os.environ.get("MP_KEY", os.environ.get("MP_ACCESS_KEY", "")))
         self.todo_key_var = tk.StringVar(value=os.environ.get("PD_TODO_KEY", ""))
         self.swl_key_var = tk.StringVar(value=os.environ.get("PDSWL_KEY", ""))
 
@@ -76,21 +77,29 @@ class TestRunnerGUI(tk.Tk):
             foreground="#666666",
         ).grid(row=2, column=2, columnspan=2, sticky="w", pady=(8, 2))
 
-        ttk.Label(settings, text="To-Do Access Key (optional)").grid(row=3, column=0, sticky="w", pady=(8, 2))
-        ttk.Entry(settings, textvariable=self.todo_key_var, show="•").grid(row=3, column=1, sticky="ew", padx=(8, 16), pady=(8, 2))
+        ttk.Label(settings, text="Meal Planner Access Key").grid(row=3, column=0, sticky="w", pady=(8, 2))
+        ttk.Entry(settings, textvariable=self.mp_key_var, show="•").grid(row=3, column=1, sticky="ew", padx=(8, 16), pady=(8, 2))
+        ttk.Label(
+            settings,
+            text="If set, passed as MP_KEY/MP_ACCESS_KEY so Save Week and shopping list writes unlock.",
+            foreground="#666666",
+        ).grid(row=3, column=2, columnspan=2, sticky="w", pady=(8, 2))
+
+        ttk.Label(settings, text="To-Do Access Key (optional)").grid(row=4, column=0, sticky="w", pady=(8, 2))
+        ttk.Entry(settings, textvariable=self.todo_key_var, show="•").grid(row=4, column=1, sticky="ew", padx=(8, 16), pady=(8, 2))
         ttk.Label(
             settings,
             text="If set, passed as PD_TODO_KEY env so the to-do plugin unlocks.",
             foreground="#666666",
-        ).grid(row=3, column=2, columnspan=2, sticky="w", pady=(8, 2))
+        ).grid(row=4, column=2, columnspan=2, sticky="w", pady=(8, 2))
 
-        ttk.Label(settings, text="Workout Log Access Key (optional)").grid(row=4, column=0, sticky="w", pady=(8, 2))
-        ttk.Entry(settings, textvariable=self.swl_key_var, show="•").grid(row=4, column=1, sticky="ew", padx=(8, 16), pady=(8, 2))
+        ttk.Label(settings, text="Workout Log Access Key (optional)").grid(row=5, column=0, sticky="w", pady=(8, 2))
+        ttk.Entry(settings, textvariable=self.swl_key_var, show="•").grid(row=5, column=1, sticky="ew", padx=(8, 16), pady=(8, 2))
         ttk.Label(
             settings,
             text="If set, passed as PDSWL_KEY env so the Simple Workout Log unlocks.",
             foreground="#666666",
-        ).grid(row=4, column=2, columnspan=2, sticky="w", pady=(8, 2))
+        ).grid(row=5, column=2, columnspan=2, sticky="w", pady=(8, 2))
 
         # Main content: split horizontally (tests on the left, output on the right)
         main = ttk.Frame(outer)
@@ -202,6 +211,14 @@ class TestRunnerGUI(tk.Tk):
             env["MP_PASSWORD"] = mp
         else:
             env.pop("MP_PASSWORD", None)
+
+        mp_key = self.mp_key_var.get().strip()
+        if mp_key:
+            env["MP_KEY"] = mp_key
+            env["MP_ACCESS_KEY"] = mp_key
+        else:
+            env.pop("MP_KEY", None)
+            env.pop("MP_ACCESS_KEY", None)
 
         todo_key = self.todo_key_var.get().strip()
         if todo_key:
