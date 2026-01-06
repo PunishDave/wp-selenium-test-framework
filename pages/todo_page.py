@@ -59,16 +59,16 @@ class TodoPage:
         self._maybe_login_first()
         seed_key = self._get_access_key() or ("admin-bypass" if self._admin_session else "")
 
-        self.driver.get(TODO_PRETTY)
-        if self._seed_access_key(seed_key):
-            self.driver.refresh()
-
-        if not self._page_ready(timeout=8):
-            self.driver.get(TODO_INDEX)
+        def visit(url: str, timeout: int) -> bool:
+            self.driver.get(url)
             if self._seed_access_key(seed_key):
                 self.driver.refresh()
-            if not self._page_ready(timeout=15):
-                raise AssertionError("To-Do page did not load on /to-do/ or /index.php/to-do/")
+            return self._page_ready(timeout=timeout)
+
+        # Prefer the non-pretty permalink first; fall back to /to-do/ if needed.
+        if not visit(TODO_INDEX, timeout=10):
+            if not visit(TODO_PRETTY, timeout=15):
+                raise AssertionError("To-Do page did not load on /index.php/to-do/ or /to-do/")
         self._last_url = self.driver.current_url
         self.ensure_unlocked_if_needed()
         return self

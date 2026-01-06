@@ -29,11 +29,12 @@ class GameWithDavePage:
         self.driver = driver
 
     def load(self):
-        self.driver.get(GAME_WITH_DAVE_PRETTY)
-        if not self._calendar_ready(timeout=10):
-            self.driver.get(GAME_WITH_DAVE_INDEX)
+        # Prefer the non-pretty permalink first to avoid "not found" when rewrites are off locally.
+        self.driver.get(GAME_WITH_DAVE_INDEX)
+        if not self._calendar_ready(timeout=12):
+            self.driver.get(GAME_WITH_DAVE_PRETTY)
             if not self._calendar_ready(timeout=15):
-                raise AssertionError("GameWithDave page did not load on either /gamewithdave/ or /index.php/gamewithdave/")
+                raise AssertionError("GameWithDave page did not load on either /index.php/gamewithdave/ or /gamewithdave/")
         return self
 
     def _calendar_ready(self, timeout: int = 15) -> bool:

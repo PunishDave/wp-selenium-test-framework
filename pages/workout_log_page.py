@@ -43,11 +43,12 @@ class WorkoutLogPage:
         seed_key = self._get_access_key()
         self._seed_access_key(seed_key)
 
-        self.driver.get(WORKOUT_LOG_PRETTY)
-        if not self._page_ready(timeout=12):
-            self.driver.get(WORKOUT_LOG_INDEX)
+        # Prefer non-pretty permalinks to avoid 404s when rewrites are disabled.
+        self.driver.get(WORKOUT_LOG_INDEX)
+        if not self._page_ready(timeout=15):
+            self.driver.get(WORKOUT_LOG_PRETTY)
             if not self._page_ready(timeout=18):
-                raise AssertionError("Workout Log page did not load on /workout-log/ or /index.php/workout-log/")
+                raise AssertionError("Workout Log page did not load on /index.php/workout-log/ or /workout-log/")
 
         self._ensure_key_if_prompted(seed_key)
         return self

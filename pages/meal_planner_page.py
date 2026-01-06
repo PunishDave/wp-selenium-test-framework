@@ -37,11 +37,12 @@ class MealPlannerPage:
         self.driver = driver
 
     def load(self):
-        self.driver.get(MEAL_PLANNER_PRETTY)
-        if not self._page_ready(timeout=5):
-            self.driver.get(MEAL_PLANNER_INDEX)
+        # Go to the index.php version first so we do not rely on pretty permalinks being enabled.
+        self.driver.get(MEAL_PLANNER_INDEX)
+        if not self._page_ready(timeout=8):
+            self.driver.get(MEAL_PLANNER_PRETTY)
             if not self._page_ready(timeout=15):
-                raise AssertionError("Meal Planner page did not load on either /meal-planner/ or /index.php/meal-planner/")
+                raise AssertionError("Meal Planner page did not load on either /index.php/meal-planner/ or /meal-planner/")
         return self
 
     def _page_ready(self, timeout: int) -> bool:
