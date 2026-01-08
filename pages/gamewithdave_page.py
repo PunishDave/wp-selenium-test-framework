@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import datetime
+import re
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
@@ -14,6 +15,7 @@ class GameWithDavePage:
     CURRENT_MONTH = (By.CSS_SELECTOR, "#calendar-container .current-month")
     NEXT_MONTH = (By.CSS_SELECTOR, "#calendar-container .next-month")
     PREV_MONTH = (By.CSS_SELECTOR, "#calendar-container .prev-month")
+    GAME_TIME_NOTE = (By.CSS_SELECTOR, "#calendar-container .calendar-game-time")
 
     # Availability form
     TOGGLE_FORM = (By.ID, "toggle-form-button")
@@ -53,6 +55,13 @@ class GameWithDavePage:
     def current_month_text(self) -> str:
         try:
             el = self.driver.find_element(*self.CURRENT_MONTH)
+            return (el.text or "").strip()
+        except Exception:
+            return ""
+
+    def game_time_note_text(self) -> str:
+        try:
+            el = self.driver.find_element(*self.GAME_TIME_NOTE)
             return (el.text or "").strip()
         except Exception:
             return ""
@@ -102,8 +111,8 @@ class GameWithDavePage:
             text = (cell.text or "").strip()
             if not text:
                 continue
-            first_token = text.split()[0]
-            if first_token == str(day):
+            match = re.match(r"^(\d{1,2})", text)
+            if match and match.group(1) == str(day):
                 return cell
         return None
 

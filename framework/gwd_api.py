@@ -90,6 +90,7 @@ def update_game_night(
     *,
     admin_password: str = ADMIN_PASSWORD,
     night_date: str,
+    night_team: str | None = None,
     night_action: str,
     debug: bool = True,
 ) -> dict[str, Any]:
@@ -99,6 +100,8 @@ def update_game_night(
         "night_date": night_date,
         "night_action": night_action,
     }
+    if night_team:
+        payload["night_team"] = night_team
     if debug:
         payload["gwd_debug"] = "1"
     return _post(payload)
@@ -128,3 +131,12 @@ def get_debug_emails(admin_password: str = ADMIN_PASSWORD) -> dict[str, Any]:
 
 def clear_debug_emails(admin_password: str = ADMIN_PASSWORD) -> dict[str, Any]:
     return fetch_game_nights(admin_password=admin_password, debug=True, debug_clear=True)
+
+
+def debug_availability(date_iso: str) -> dict[str, Any]:
+    payload: dict[str, str] = {
+        "action": "gwd_debug_availability",
+        "date": date_iso,
+        "gwd_debug": "1",
+    }
+    return _post(payload)

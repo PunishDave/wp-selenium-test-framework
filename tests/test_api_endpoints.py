@@ -47,6 +47,7 @@ def test_gamewithdave_calendar_ajax_endpoint():
     assert res.get("success") is True
     html = res.get("data", {}).get("html", "")
     assert "calendar" in html.lower(), "Calendar HTML missing in load_calendar response."
+    assert "calendar-game-time" in html, "Calendar game time note missing in load_calendar response."
 
 
 def test_gamewithdave_fetch_game_nights_endpoint():
@@ -59,7 +60,11 @@ def test_gamewithdave_fetch_game_nights_endpoint():
     )
     assert res.get("success") is True
     data = res.get("data", {})
-    assert isinstance(data.get("nights"), list), "Expected nights list in gwd_fetch_game_nights response."
+    nights = data.get("nights")
+    assert isinstance(nights, list), "Expected nights list in gwd_fetch_game_nights response."
+    for night in nights:
+        assert "team" in night, "Expected team in gwd_fetch_game_nights entries."
+        assert "teamLabel" in night, "Expected teamLabel in gwd_fetch_game_nights entries."
 
 
 def _rest_json(permalink: str, rest_route: str, key: str, header_name: str, *, skip_key_msg: str, skip_404_msg: str):
