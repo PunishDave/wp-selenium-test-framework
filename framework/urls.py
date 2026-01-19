@@ -26,6 +26,10 @@ TODO_INDEX  = f"{BASE}/index.php/to-do/"
 WORKOUT_LOG_PRETTY = f"{BASE}/workout-log/"
 WORKOUT_LOG_INDEX  = f"{BASE}/index.php/workout-log/"
 
+# House Log (front-end)
+HOUSE_LOG_PRETTY = f"{BASE}/house-log/"
+HOUSE_LOG_INDEX  = f"{BASE}/index.php/house-log/"
+
 # WP Admin slugs (stable if you know them)
 MP_ADMIN_RECIPES_SLUG = "admin.php?page=mp_recipes"
 MP_ADMIN_ADD_SLUG     = "admin.php?page=mp_add_recipe"

@@ -45,6 +45,7 @@ class TestRunnerGUI(tk.Tk):
         self.mp_key_var = tk.StringVar(value=os.environ.get("MP_KEY", os.environ.get("MP_ACCESS_KEY", "")))
         self.todo_key_var = tk.StringVar(value=os.environ.get("PD_TODO_KEY", ""))
         self.swl_key_var = tk.StringVar(value=os.environ.get("PDSWL_KEY", ""))
+        self.house_log_key_var = tk.StringVar(value=os.environ.get("PD_HOUSE_LOG_KEY", ""))
 
         self._build_ui()
         self.refresh_tests()
@@ -100,6 +101,14 @@ class TestRunnerGUI(tk.Tk):
             text="If set, passed as PDSWL_KEY env so the Simple Workout Log unlocks.",
             foreground="#666666",
         ).grid(row=5, column=2, columnspan=2, sticky="w", pady=(8, 2))
+
+        ttk.Label(settings, text="House Log Access Key (optional)").grid(row=6, column=0, sticky="w", pady=(8, 2))
+        ttk.Entry(settings, textvariable=self.house_log_key_var, show="•").grid(row=6, column=1, sticky="ew", padx=(8, 16), pady=(8, 2))
+        ttk.Label(
+            settings,
+            text="If set, passed as PD_HOUSE_LOG_KEY env so the House Log unlocks.",
+            foreground="#666666",
+        ).grid(row=6, column=2, columnspan=2, sticky="w", pady=(8, 2))
 
         # Main content: split horizontally (tests on the left, output on the right)
         main = ttk.Frame(outer)
@@ -231,6 +240,12 @@ class TestRunnerGUI(tk.Tk):
             env["PDSWL_KEY"] = swl_key
         else:
             env.pop("PDSWL_KEY", None)
+
+        house_log_key = self.house_log_key_var.get().strip()
+        if house_log_key:
+            env["PD_HOUSE_LOG_KEY"] = house_log_key
+        else:
+            env.pop("PD_HOUSE_LOG_KEY", None)
 
         return env
 
