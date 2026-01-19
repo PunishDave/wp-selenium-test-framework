@@ -77,3 +77,24 @@ def test_house_log_admin_crud(driver):
 
     list_page.delete_issue(updated_title)
     assert not list_page.has_title(updated_title)
+
+
+def test_house_log_admin_complete_and_reopen(driver):
+    user, pw = _get_admin_creds()
+    WpAdminLoginPage(driver).load().login(user, pw)
+
+    form = WpAdminHouseLogIssueFormPage(driver).open()
+    title = _unique_title("Admin House Issue Complete")
+    list_page = form.save(title=title, details="Garage door alignment", priority=1)
+    assert list_page.has_title(title, WpAdminHouseLogPage.SECTION_ACTIVE)
+
+    list_page.mark_completed(title)
+    assert not list_page.has_title(title, WpAdminHouseLogPage.SECTION_ACTIVE)
+    assert list_page.has_title(title, WpAdminHouseLogPage.SECTION_COMPLETED)
+
+    list_page.reopen_issue(title)
+    assert list_page.has_title(title, WpAdminHouseLogPage.SECTION_ACTIVE)
+    assert not list_page.has_title(title, WpAdminHouseLogPage.SECTION_COMPLETED)
+
+    list_page.delete_issue(title, WpAdminHouseLogPage.SECTION_ACTIVE)
+    assert not list_page.has_title(title, WpAdminHouseLogPage.SECTION_ACTIVE)
