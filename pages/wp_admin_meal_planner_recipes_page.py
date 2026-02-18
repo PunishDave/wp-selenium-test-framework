@@ -14,6 +14,7 @@ class WpAdminMealPlannerRecipesPage:
     # Your confirmed URL
     RECIPES_URL = "admin.php?page=mp_recipes"
     ADD_URL     = "admin.php?page=mp_add_recipe"
+    EMAIL_URL   = "admin.php?page=mp_email"
 
     # More flexible locators
     ADD_NEW = (By.CSS_SELECTOR, f"a.page-title-action[href='{ADD_URL}'], a[href='{ADD_URL}']")
@@ -25,6 +26,7 @@ class WpAdminMealPlannerRecipesPage:
     INGREDIENTS = (By.ID, "ingredients")
     SUBMIT = (By.CSS_SELECTOR, "input[name='submit']")
     NOTICE = (By.CSS_SELECTOR, ".notice, .updated, .error")
+    EMAIL_RECIPIENTS = (By.ID, "mp-email-recipients")
 
     def __init__(self, driver):
         self.driver = driver
@@ -76,3 +78,8 @@ class WpAdminMealPlannerRecipesPage:
         WebDriverWait(self.driver, 25).until(notice_has_text)
         return self
 
+    def open_email_settings(self):
+        url = f"{WP_ADMIN.rstrip('/')}/{self.EMAIL_URL}"
+        self.driver.get(url)
+        WebDriverWait(self.driver, 25).until(EC.presence_of_element_located(self.EMAIL_RECIPIENTS))
+        return self

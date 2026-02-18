@@ -218,3 +218,69 @@ def test_meal_planner_shopping_list_post_endpoint():
     saved_items = payload.get("shopping_list", [])
     assert isinstance(saved_items, list), "shopping_list should be a list."
     assert any(token in s for s in saved_items), "Shopping list POST response missing the test token item."
+
+
+def test_meal_planner_next_week_save_logs_debug_email():
+    key = (os.getenv("MP_KEY") or os.getenv("MP_ACCESS_KEY") or "").strip()
+    headers = {"Content-Type": "application/json", "X-MP-Key": key}
+
+    debug_endpoint = f"{urls.BASE}/wp-json/meal-planner/v1/debug-emails"
+    debug_fallback = f"{urls.BASE}/index.php?rest_route=/meal-planner/v1/debug-emails"
+    clear_endpoint = f"{urls.BASE}/wp-json/meal-planner/v1/debug-emails/clear"
+    clear_fallback = f"{urls.BASE}/index.php?rest_route=/meal-planner/v1/debug-emails/clear"
+
+    try:
+        _rest_json_body(
+            "POST",
+            clear_endpoint,
+            clear_fallback,
+            {},
+            headers,
+            skip_key_msg="Meal Planner access key required; set MP_KEY or MP_ACCESS_KEY to use debug email endpoints.",
+            skip_404_msg="Meal Planner debug email clear endpoint not reachable (404). Is the plugin active?",
+        )
+    except urllib.error.HTTPError as exc:  # type: ignore[attr-defined]
+        if exc.code == 403:
+            pytest.skip("Meal Planner debug email endpoint is disabled (non-development environment).")
+        raise
+
+    week_start = _next_saturday().isoformat()
+    meals = {
+        str(i): {
+            "id": 0,
+            "title": f"Selenium Meal {i + 1}",
+            "ingredients": [f"Ingredient {i + 1}"],
+        }
+        for i in range(7)
+    }
+
+    _rest_json_body(
+        "POST",
+        f"{urls.BASE}/wp-json/meal-planner/v1/weeks",
+        f"{urls.BASE}/index.php?rest_route=/meal-planner/v1/weeks",
+        {"week_start": week_start, "meals": meals},
+        headers,
+        skip_key_msg="Meal Planner access key required; set MP_KEY or MP_ACCESS_KEY to save weeks.",
+        skip_404_msg="Meal Planner weeks endpoint not reachable (404). Is the plugin active?",
+    )
+
+    debug_payload = _rest_json(
+        debug_endpoint,
+        debug_fallback,
+        key,
+        "X-MP-Key",
+        skip_key_msg="Meal Planner access key required; set MP_KEY or MP_ACCESS_KEY to read debug email logs.",
+        skip_404_msg="Meal Planner debug email endpoint not reachable (404). Is the plugin active?",
+    )
+    assert isinstance(debug_payload, dict), "Debug email endpoint did not return an object."
+    entries = debug_payload.get("entries", [])
+    assert isinstance(entries, list), "Debug email payload missing entries list."
+
+    matched = None
+    for entry in entries:
+        if entry.get("type") == "next-week-saved" and entry.get("week_start") == week_start:
+            matched = entry
+            break
+
+    assert matched is not None, f"Expected a next-week-saved debug email entry for {week_start}."
+    assert matched.get("debug") is True, "Expected debug email entry to be flagged as debug mode."
