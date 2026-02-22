@@ -30,6 +30,10 @@ WORKOUT_LOG_INDEX  = f"{BASE}/index.php/workout-log/"
 HOUSE_LOG_PRETTY = f"{BASE}/house-log/"
 HOUSE_LOG_INDEX  = f"{BASE}/index.php/house-log/"
 
+# Sudoku Helper (front-end)
+SUDOKU_HELPER_PRETTY = f"{BASE}/sudoku-helper/"
+SUDOKU_HELPER_INDEX  = f"{BASE}/index.php/sudoku-helper/"
+
 # WP Admin slugs (stable if you know them)
 MP_ADMIN_RECIPES_SLUG = "admin.php?page=mp_recipes"
 MP_ADMIN_ADD_SLUG     = "admin.php?page=mp_add_recipe"
