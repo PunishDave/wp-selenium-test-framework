@@ -9,6 +9,7 @@ import pytest
 
 from framework import urls
 from framework.gwd_api import ADMIN_PASSWORD
+from framework.gwd_api import GWD_ACCESS_KEY, rest_dashboard
 
 
 def _get(url: str) -> str:
@@ -65,6 +66,24 @@ def test_gamewithdave_fetch_game_nights_endpoint():
     for night in nights:
         assert "team" in night, "Expected team in gwd_fetch_game_nights entries."
         assert "teamLabel" in night, "Expected teamLabel in gwd_fetch_game_nights entries."
+
+
+def test_gamewithdave_rest_dashboard_requires_access_key():
+    url = f"{urls.BASE}/index.php?rest_route=/gamewithdave/v1/dashboard"
+    with pytest.raises(urllib.error.HTTPError) as error:
+        urllib.request.urlopen(url, timeout=15)
+    assert error.value.code in {401, 503}
+
+
+def test_gamewithdave_rest_dashboard_contract():
+    if not GWD_ACCESS_KEY:
+        pytest.skip("Set GWD_ACCESS_KEY to exercise the GameWithDave REST API.")
+    payload = rest_dashboard()
+    assert set(payload) >= {"users", "teams", "days"}
+    assert isinstance(payload["users"], list)
+    assert isinstance(payload["teams"], list)
+    assert isinstance(payload["days"], list)
+    assert all("email" not in user and "password" not in user for user in payload["users"])
 
 
 def _rest_json(permalink: str, rest_route: str, key: str, header_name: str, *, skip_key_msg: str, skip_404_msg: str):

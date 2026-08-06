@@ -5,6 +5,7 @@ import pytest
 from pages.gamewithdave_page import GameWithDavePage
 from framework.gwd_api import (
     ADMIN_PASSWORD,
+    GWD_ACCESS_KEY,
     GWD_PASSWORDS,
     clear_debug_emails,
     debug_availability,
@@ -12,6 +13,8 @@ from framework.gwd_api import (
     submit_availability,
     trigger_cron,
     update_game_night,
+    rest_save_availability,
+    rest_update_game_night,
 )
 
 TEAM_1 = "team-1"
@@ -295,6 +298,36 @@ def test_gamewithdave_lock_in_sends_debug_email_with_ics(record_property):
 
     night = _find_night(target, TEAM_1)
     assert night is not None and night.get("status") == "locked"
+
+
+def test_gamewithdave_rest_update_triggers_lock_email_with_ics(record_property):
+    if not GWD_ACCESS_KEY:
+        pytest.skip("Set GWD_ACCESS_KEY to exercise the HomeApps API.")
+    target = _find_clean_date(108)
+    _clear_debug_log()
+
+    for role in ("bene", "robin", "razzyn"):
+        result = rest_save_availability(
+            user_role=role,
+            start_date=target,
+            end_date=target,
+            status="yes",
+        )
+        assert result.get("updated") is True
+
+    night = _find_night(target, TEAM_1)
+    assert night is not None and night.get("status") == "detected"
+    _clear_debug_log()
+
+    updated = rest_update_game_night(date_iso=target, team=TEAM_1, action="lock")
+    assert updated.get("status") == "locked"
+
+    entry = _find_debug_entry("lock", target, team=TEAM_1)
+    record_property("gwd_rest_lock_email", entry)
+    assert entry is not None
+    assert entry.get("ics") is True
+    assert entry.get("subject")
+    assert len(entry.get("recipients") or []) == 3
 
 
 def test_gamewithdave_reminder_email_logged_when_missing_availability(record_property):

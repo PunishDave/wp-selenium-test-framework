@@ -6,7 +6,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 
-from framework.urls import GAME_WITH_DAVE_PRETTY, GAME_WITH_DAVE_INDEX
+from framework.urls import GAME_WITH_DAVE_PRETTY, GAME_WITH_DAVE_INDEX, GAME_WITH_DAVE_PAGE_ID
 
 
 class GameWithDavePage:
@@ -31,13 +31,11 @@ class GameWithDavePage:
         self.driver = driver
 
     def load(self):
-        # Prefer the non-pretty permalink first to avoid "not found" when rewrites are off locally.
-        self.driver.get(GAME_WITH_DAVE_INDEX)
-        if not self._calendar_ready(timeout=12):
-            self.driver.get(GAME_WITH_DAVE_PRETTY)
-            if not self._calendar_ready(timeout=15):
-                raise AssertionError("GameWithDave page did not load on either /index.php/gamewithdave/ or /gamewithdave/")
-        return self
+        for url in (GAME_WITH_DAVE_PAGE_ID, GAME_WITH_DAVE_INDEX, GAME_WITH_DAVE_PRETTY):
+            self.driver.get(url)
+            if self._calendar_ready(timeout=8):
+                return self
+        raise AssertionError("GameWithDave page did not load using its local page ID or slug.")
 
     def _calendar_ready(self, timeout: int = 15) -> bool:
         try:

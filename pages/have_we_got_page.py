@@ -53,6 +53,10 @@ class HaveWeGotPage:
     def _has_table(self) -> bool:
         return len(self.driver.find_elements(*self.TABLE)) > 0
 
+    def has_results(self) -> bool:
+        self._wait_for_results_area()
+        return self._has_table() and bool(self.driver.find_elements(*self.ROWS))
+
     def _has_no_results_message(self) -> bool:
         return len(self.driver.find_elements(*self.NO_RESULTS)) > 0
 
@@ -209,5 +213,4 @@ class HaveWeGotPage:
 
         found = [(t.text or "").strip().splitlines()[0].strip() for t in ths]
         raise AssertionError(f"Header '{header_name}' not found. Found headers: {found}")
-
 

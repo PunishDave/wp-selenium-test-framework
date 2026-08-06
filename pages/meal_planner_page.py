@@ -169,7 +169,10 @@ class MealPlannerPage:
         before = (cell.text or "").strip() if cell else ""
 
         for attempt in range(retries):
-            WebDriverWait(self.driver, 20).until(EC.element_to_be_clickable(self.REPLACE_BTN_D0)).click()
+            button = WebDriverWait(self.driver, 20).until(EC.presence_of_element_located(self.REPLACE_BTN_D0))
+            self.driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", button)
+            WebDriverWait(self.driver, 10).until(lambda _: button.is_enabled())
+            self.driver.execute_script("arguments[0].click();", button)
 
             end = time.time() + timeout
             while time.time() < end:

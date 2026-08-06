@@ -125,7 +125,7 @@ class SudokuHelperPage:
         return count
 
     def click_generate(self):
-        WebDriverWait(self.driver, 10).until(EC.element_to_be_clickable(self.GENERATE_BUTTON)).click()
+        self._safe_click(self.GENERATE_BUTTON)
         return self
 
     def wait_for_generated(self, timeout: int = 45):
@@ -142,8 +142,14 @@ class SudokuHelperPage:
         return self.driver.find_element(*self.LOAD_BUTTON)
 
     def click_load(self):
-        WebDriverWait(self.driver, 10).until(EC.element_to_be_clickable(self.LOAD_BUTTON)).click()
+        self._safe_click(self.LOAD_BUTTON)
         return self
+
+    def _safe_click(self, locator):
+        button = WebDriverWait(self.driver, 10).until(EC.presence_of_element_located(locator))
+        self.driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", button)
+        WebDriverWait(self.driver, 10).until(lambda _: button.is_enabled())
+        self.driver.execute_script("arguments[0].click();", button)
 
     def load_button_text(self) -> str:
         return (self.load_button_element().text or "").strip()

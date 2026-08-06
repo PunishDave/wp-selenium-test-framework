@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 import urllib.parse
 import urllib.request
 from typing import Any
@@ -16,6 +17,7 @@ GWD_PASSWORDS = {
 
 ADMIN_PASSWORD = GWD_PASSWORDS["dave"]
 CRON_SECRET = "k7Hh2f9sYxP4QzLm"
+GWD_ACCESS_KEY = (os.getenv("GWD_ACCESS_KEY") or os.getenv("GWD_KEY") or "").strip()
 
 
 def _post(
@@ -140,3 +142,35 @@ def debug_availability(date_iso: str) -> dict[str, Any]:
         "gwd_debug": "1",
     }
     return _post(payload)
+
+
+def _rest(method: str, path: str, *, body: dict[str, Any] | None = None, access_key: str = GWD_ACCESS_KEY) -> dict[str, Any]:
+    url = f"{urls.BASE}/index.php?rest_route=/gamewithdave/v1/{path.lstrip('/')}"
+    payload = json.dumps(body).encode() if body is not None else None
+    req = urllib.request.Request(url, data=payload, method=method)
+    req.add_header("Content-Type", "application/json")
+    if access_key:
+        req.add_header("X-GWD-Key", access_key)
+    with urllib.request.urlopen(req, timeout=20.0) as resp:
+        return json.loads(resp.read().decode() or "{}")
+
+
+def rest_dashboard(*, access_key: str = GWD_ACCESS_KEY) -> dict[str, Any]:
+    return _rest("GET", "dashboard", access_key=access_key)
+
+
+def rest_save_availability(
+    *, user_role: str, start_date: str, end_date: str, status: str, access_key: str = GWD_ACCESS_KEY
+) -> dict[str, Any]:
+    return _rest(
+        "POST",
+        "availability",
+        access_key=access_key,
+        body={"user_role": user_role, "start_date": start_date, "end_date": end_date, "status": status},
+    )
+
+
+def rest_update_game_night(
+    *, date_iso: str, team: str, action: str, access_key: str = GWD_ACCESS_KEY
+) -> dict[str, Any]:
+    return _rest("POST", f"game-nights/{date_iso}/{team}", access_key=access_key, body={"action": action})

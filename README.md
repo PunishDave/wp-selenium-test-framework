@@ -1,5 +1,6 @@
 ## Running the tests
-- Set any needed environment variables (e.g., `WP_ADMIN_USER`, `WP_ADMIN_PASS`, optionally `MP_PASSWORD`, and `HEADLESS=true` if you want headless Chrome).
+- Set any needed environment variables, including `WP_BASE_URL` when WordPress is not at `http://localhost:8080`, `WP_ADMIN_USER`, `WP_ADMIN_PASS`, and `HEADLESS=true` for headless Chrome.
+- Set `GWD_ACCESS_KEY` to the key configured under WordPress Admin > GameWithDave > HomeApps API when running the GameWithDave REST and notification coverage.
 - From the repo root, run `pytest -q` or use `python -m gui.test_runner_tk` for the GUI runner.
 
 ## Reports

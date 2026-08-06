@@ -2,6 +2,7 @@
 
 import os
 import time
+import pytest
 
 from pages.wp_admin_login_page import WpAdminLoginPage
 from pages.wp_admin_meal_planner_recipes_page import WpAdminMealPlannerRecipesPage
@@ -10,7 +11,8 @@ from pages.wp_admin_meal_planner_recipes_page import WpAdminMealPlannerRecipesPa
 def _get_admin_creds() -> tuple[str, str]:
     user = (os.getenv("WP_ADMIN_USER") or "").strip()
     pw = (os.getenv("WP_ADMIN_PASS") or "").strip()
-    assert user and pw, "WP_ADMIN_USER / WP_ADMIN_PASS not set."
+    if not user or not pw:
+        pytest.skip("WP_ADMIN_USER / WP_ADMIN_PASS not set.")
     return user, pw
 
 

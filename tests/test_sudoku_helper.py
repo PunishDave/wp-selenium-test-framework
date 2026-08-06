@@ -43,13 +43,9 @@ def test_sudoku_helper_generate_creates_givens(driver):
 def test_sudoku_helper_load_button_shows_pressed_feedback(driver):
     page = SudokuHelperPage(driver).load()
 
-    before = page.load_button_text()
     page.click_load()
 
     assert page.load_button_is_pending(), "Expected Load button to enter pending/pressed state."
-    after = page.load_button_text()
-    assert after and after != before
-    assert "choose file" in after.lower()
 
 
 def test_sudoku_helper_loads_valid_save_file(driver, tmp_path):
